@@ -25,7 +25,8 @@ namespace AI_Meeting_Assistant.Controllers
                 {
                     Order = index + 1,
                     Topic = topic,
-                    DurationMinutes = baseMinutesPerTopic + (index < remainingMinutes ? 1 : 0)
+                    DurationMinutes = baseMinutesPerTopic + (index < remainingMinutes ? 1 : 0),
+                    Owner = request.Participants[index % request.Participants.Count]
                 })
                 .ToList();
 

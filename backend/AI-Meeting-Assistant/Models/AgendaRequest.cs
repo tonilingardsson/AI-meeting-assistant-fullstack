@@ -18,5 +18,9 @@ namespace AI_Meeting_Assistant.Models
         [Required(ErrorMessage = "At least one topic is required.")]
         [MinLength(1, ErrorMessage = "At least one topic is required.")]
         public List<string> Topics { get; set; } = new();
+
+        [Required(ErrorMessage = "At least one participant is required.")]
+        [MinLength(1, ErrorMessage = "At least one participant is required.")]
+        public List<string> Participants { get; set; } = new();
     }
 }
