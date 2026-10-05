@@ -16,20 +16,29 @@ namespace AI_Meeting_Assistant.Controllers
         [HttpPost("agenda")]
         public IActionResult CreateAgenda([FromBody] AgendaRequest request)
         {
-            // Placeholder for agenda creation logic
-            return Ok(
-                // Temporary JSON response because "new" creates an anonymous type,
-                // and "Ok" serializes it to JSON with HTTP 200 status code.
-                // IAction result is useful when an endpoint may return different types
-                // of responses, such as ok, badRequest, or an error response.
-                new
-                {  
-                Message = "Tillfälligt agendautkast skapat. Gemini kopplas in senare.",
+            int topicCount = request.Topics.Count;
+            int baseMinutesPerTopic = request.DurationMinutes / topicCount;
+            int remainingMinutes = request.DurationMinutes % topicCount;
+
+            var items = request.Topics
+                .Select((topic, index) => new AgendaItem
+                {
+                    Order = index + 1,
+                    Topic = topic,
+                    DurationMinutes = baseMinutesPerTopic + (index < remainingMinutes ? 1 : 0)
+                })
+                .ToList();
+
+            var response = new AgendaResponse
+            {
+                Message = "Tillfällig agendautkast skapat. Gemini kopplas in senare.",
                 Title = request.Title,
                 Purpose = request.Purpose,
-                DurationMinutes = request.DurationMinutes,
-                Topics = request.Topics
-            });
+                TotalDurationMinutes = request.DurationMinutes,
+                Items = items
+            };
+
+            return Ok(response);
         }
     }
 }
