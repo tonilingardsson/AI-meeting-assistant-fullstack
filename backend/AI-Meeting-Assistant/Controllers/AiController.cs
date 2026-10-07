@@ -36,7 +36,13 @@ namespace AI_Meeting_Assistant.Controllers
                 Title = request.Title,
                 Purpose = request.Purpose,
                 TotalDurationMinutes = request.DurationMinutes,
-                Items = items
+                Items = items,
+                SummaryTemplate = new MeetingSummaryTemplate
+                {
+                    Notes = string.Empty,
+                    Decisions = new List<string>(),
+                    ActionItems = new List<ActionItem>()
+                }
             };
 
             return Ok(response);

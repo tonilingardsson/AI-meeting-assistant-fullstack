@@ -8,5 +8,6 @@
         public string Purpose { get; set; } = string.Empty;
         public int TotalDurationMinutes { get; set; }
         public List<AgendaItem> Items { get; set; } = new();
+        public MeetingSummaryTemplate SummaryTemplate { get; set; } = new();
     }
 }
