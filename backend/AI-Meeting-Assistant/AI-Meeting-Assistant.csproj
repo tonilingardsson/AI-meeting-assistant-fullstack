@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>AI_Meeting_Assistant</RootNamespace>
+    <UserSecretsId>f1897901-5139-4056-b151-44ea6cce15d6</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
