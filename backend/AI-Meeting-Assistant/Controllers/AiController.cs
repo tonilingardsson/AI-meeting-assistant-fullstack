@@ -27,12 +27,48 @@ namespace AI_Meeting_Assistant.Controllers
         }
 
         [HttpPost("agenda")]
-        public IActionResult CreateAgenda([FromBody] AgendaRequest request)
+        public async Task<IActionResult> CreateAgenda(
+    [FromBody] AgendaRequest request,
+    CancellationToken cancellationToken)
         {
-            // Calls the (logic or) service to create an agenda based on the request 
-            AgendaResponse response = _agendaService.CreateAgenda(request);
+            try
+            {
+                string agenda = await _agendaService.CreateAgendaAsync(
+                    request,
+                    cancellationToken);
 
-            return Ok(response);
+                return Ok(new { Agenda = agenda });
+            }
+            catch (HttpRequestException ex)
+                when (ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+            {
+                return Problem(
+                    title: "AI service temporarily unavailable.",
+                    detail: "Gemini is temporarily unavailable. Please wait and try again.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+            catch (HttpRequestException)
+            {
+                return Problem(
+                    title: "AI service request failed.",
+                    detail: "Could not get a response from Gemini.",
+                    statusCode: StatusCodes.Status502BadGateway);
+            }
+            catch (InvalidOperationException)
+            {
+                return Problem(
+                    title: "AI service returned no usable text.",
+                    detail: "Gemini did not return a usable agenda.",
+                    statusCode: StatusCodes.Status502BadGateway);
+            }
+            catch (OperationCanceledException)
+                when (!cancellationToken.IsCancellationRequested)
+            {
+                return Problem(
+                    title: "AI service timed out.",
+                    detail: "Gemini took too long to respond. Try again.",
+                    statusCode: StatusCodes.Status504GatewayTimeout);
+            }
         }
 
         [HttpPost("summarize")]
