@@ -1,122 +1,123 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import type { FormEvent } from 'react'
 import './App.css'
 
+type ApiResponse = {
+    summary?: string
+    title?: string
+    detail?: string
+    errors?: Record<string, string[]>
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+    const [notes, setNotes] = useState('')
+    const [summary, setSummary] = useState('')
+    const [error, setError] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    async function handleSummarize(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault()
 
-      <div className="ticks"></div>
+        if (!notes.trim() || isLoading) {
+            return
+        }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        setIsLoading(true)
+        setError('')
+        setSummary('')
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        try {
+            const response = await fetch('/api/ai/summarize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: notes,
+                }),
+            })
+
+            // Error responses are not always valid JSON.
+            const data: ApiResponse | null = await response
+                .json()
+                .catch(() => null)
+
+            if (!response.ok) {
+                const validationErrors = data?.errors
+                    ? Object.values(data.errors).flat().join(' ')
+                    : ''
+
+                throw new Error(
+                    validationErrors ||
+                    data?.detail ||
+                    data?.title ||
+                    `Request failed (${response.status}).`,
+                )
+            }
+
+            if (typeof data?.summary !== 'string' || !data.summary.trim()) {
+                throw new Error('The backend returned no usable summary.')
+            }
+
+            setSummary(data.summary)
+        } catch (error: unknown) {
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : 'An unexpected error occurred.',
+            )
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <main className="meeting-assistant" >
+        <h1>AI Meeting Assistant </h1>
+
+            <form onSubmit={handleSummarize}>
+                <label htmlFor="meeting-notes">Meeting notes</label>
+
+                <textarea
+                    id="meeting-notes"
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    placeholder="Paste your meeting notes here..."
+                    rows={10}
+                    maxLength={20000}
+                    required
+                    disabled={isLoading}
+                />
+
+                <p>{notes.length} <span>/ 20,000 characters</span></p>
+
+                <button type="submit" disabled={isLoading || !notes.trim()}>
+                    {isLoading ? 'Summarizing...' : 'Summarize'}
+                </button>
+    </form>
+
+{
+    error && (
+        <p className="error-message" role = "alert" >
+        { error }
+            </p>
+            )
+}
+
+<section aria-live="polite" aria-busy={ isLoading }>
+{ isLoading && <p>Generating your summary...</p>}
+
+{
+    summary && (
+        <>
+            <h2>Summary</h2>
+            <div className="summary-output">{summary}</div>
+        </>
+    )
+}
+</section>
+    </main>
+    )
 }
 
 export default App
