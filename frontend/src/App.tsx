@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
-import AgendaForm from './components/AgendaForm';
+import AgendaForm from './components/AgendaForm'
 import InvitationForm from './components/InvitationForm'
+import { postJson } from './services/api'
 
-type ApiResponse = {
+type SummaryResponse = {
     summary?: string
-    title?: string
-    detail?: string
-    errors?: Record<string, string[]>
 }
 
 function App() {
@@ -29,33 +27,12 @@ function App() {
         setSummary('')
 
         try {
-            const response = await fetch('/api/ai/summarize', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            const data = await postJson<SummaryResponse>(
+                '/api/ai/summarize',
+                {
                     text: notes,
-                }),
-            })
-
-            // Error responses are not always valid JSON.
-            const data: ApiResponse | null = await response
-                .json()
-                .catch(() => null)
-
-            if (!response.ok) {
-                const validationErrors = data?.errors
-                    ? Object.values(data.errors).flat().join(' ')
-                    : ''
-
-                throw new Error(
-                    validationErrors ||
-                    data?.detail ||
-                    data?.title ||
-                    `Request failed (${response.status}).`,
-                )
-            }
+                },
+            )
 
             if (typeof data?.summary !== 'string' || !data.summary.trim()) {
                 throw new Error('The backend returned no usable summary.')

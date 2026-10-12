@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { postJson } from '../services/api'
 
 type AgendaResponse = {
     agenda?: string
-    title?: string
-    detail?: string
-    errors?: Record<string, string[]>
 }
 
 function toList(value: string): string[] {
@@ -63,42 +61,22 @@ function AgendaForm() {
         setIsLoading(true)
 
         try {
-            const response = await fetch('/api/ai/agenda', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    title: title.trim(),
-                    purpose: purpose.trim(),
-                    durationMinutes,
-                    topics: topicList,
-                    participants: participantList,
-                }),
-            })
+            const data = await postJson<AgendaResponse>(
+            '/api/ai/agenda',
+            {
+                title: title.trim(),
+                purpose: purpose.trim(),
+                durationMinutes,
+                topics: topicList,
+                participants: participantList,
+            },
+        )
 
-            const data: AgendaResponse | null = await response
-                .json()
-                .catch(() => null)
+        if (typeof data?.agenda !== 'string' || !data.agenda.trim()) {
+            throw new Error('The backend returned no usable agenda.')
+        }
 
-            if (!response.ok) {
-                const validationErrors = data?.errors
-                    ? Object.values(data.errors).flat().join(' ')
-                    : ''
-
-                throw new Error(
-                    validationErrors ||
-                    data?.detail ||
-                    data?.title ||
-                    `Request failed (${response.status}).`,
-                )
-            }
-
-            if (typeof data?.agenda !== 'string' || !data.agenda.trim()) {
-                throw new Error('The backend returned no usable agenda.')
-            }
-
-            setAgenda(data.agenda)
+        setAgenda(data.agenda)
         } catch (error: unknown) {
             setError(
                 error instanceof Error
