@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
 import AgendaForm from './components/AgendaForm';
+import InvitationForm from './components/InvitationForm'
 
 type ApiResponse = {
     summary?: string
@@ -117,7 +118,8 @@ function App() {
     )
 }
 </section>
-<AgendaForm />
+    < AgendaForm />
+<InvitationForm />
     </main>
     )
 }
